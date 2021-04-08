@@ -6,10 +6,13 @@ const Repository = require("../database/entities/Repository");
 const {createOctokit} = require("./octokit");
 
 async function init(access_token) {
+
     const windows = BrowserWindow.getAllWindows()
-    window = windows.find(win => win.isVisible()) || new BrowserWindow({
+    const window = windows.find(win => win.isVisible()) || new BrowserWindow({
         width: 500,
         height: 500,
+        show: false,
+
         webPreferences: {
             nodeIntegration: true
         }
@@ -24,16 +27,21 @@ async function init(access_token) {
         } else {
             await Config.query().patch({accessToken: access_token})
         }
-        window.loadFile('src/components/windows/index.html')
+        window.webContents.openDevTools()
         const repos = await Repository.loadAll()
         buildContext(window, {
-            repositories: repos,
+            repositories: [],
             config: config
         })
+        window.loadFile('src/components/windows/index.html')
+
         global.octokit = await createOctokit(access_token)
     } else {
         window.loadURL(`https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&scope=repo`)
     }
+     window.once("ready-to-show", () => {
+            window.show();
+        });
     window.setMenu(null)
 
 
